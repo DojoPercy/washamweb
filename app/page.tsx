@@ -110,15 +110,17 @@ export default function LandingPage() {
           <div className="text-center md:text-left">
             {/* Mobile Logo */}
             <div className="mb-6 md:mb-8 flex justify-center md:justify-start">
-              <Image
-                src="/washam-logo.png"
-                alt="WashAm Logo"
-                width={100}
-                height={100}
-                className="md:w-[140px] md:h-[140px] drop-shadow-2xl"
-              />
-            </div>
-
+              <div className="relative">
+                <div className="absolute inset-0 bg-white/20 rounded-full blur-xl scale-110"></div>
+                <Image
+                  src="/washam-logo.png"
+                  alt="WashAm Logo"
+                  width={120}
+                  height={120}
+                  className="md:w-[160px] md:h-[160px] drop-shadow-2xl relative z-10 rounded-2xl"
+                />
+              </div>
+              </div>
             {/* Mobile-Optimized Headlines */}
             <h1 className="text-4xl md:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight drop-shadow-lg">
               Professional Laundry
