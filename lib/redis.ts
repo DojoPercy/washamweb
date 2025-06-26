@@ -6,23 +6,24 @@ declare global {
 
 class RedisClient {
   private static instance: Redis
-
+  
   public static getInstance(): Redis {
+    console.log(process.env.REDIS_HOST, process.env.REDIS_PORT, process.env.REDIS_PASSWORD)
     if (!RedisClient.instance) {
       RedisClient.instance = new Redis({
-        host: process.env.REDIS_HOST || "localhost",
+        host: process.env.REDIS_HOST,
         port: Number.parseInt(process.env.REDIS_PORT || "6379"),
         password: process.env.REDIS_PASSWORD,
         retryDelayOnFailover: 100,
         enableReadyCheck: false,
         maxRetriesPerRequest: null,
         lazyConnect: true,
-        // Connection pool settings
         family: 4,
-        keepAlive: true,
         connectTimeout: 10000,
-        commandTimeout: 5000,
+        tls: {}, // <--- Enables SSL for Azure
       })
+      
+      
 
       // Handle connection events
       RedisClient.instance.on("connect", () => {
