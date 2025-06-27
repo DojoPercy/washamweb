@@ -5,7 +5,7 @@ import { sendNewOrderNotification } from "@/lib/email"
 export async function POST(request: NextRequest) {
   try {
     const orderData = await request.json()
-    console.log(orderData.orderNumber, "Order data received")
+
     // Create order in Redis
     const order = await RedisOrderService.createOrder({
       orderNumber: orderData.orderNumber,
@@ -23,16 +23,23 @@ export async function POST(request: NextRequest) {
       status: OrderStatus.CONFIRMED,
     })
 
-    console.log("Order created:", order)
-    // Send email notification
-    await sendNewOrderNotification({
-      ...orderData,
-      ...orderData.customer,
-      ...orderData.pickup,
-      createdAt: order.createdAt,
-    })
+    // Prepare data for email notification, explicitly mapping fields
+    const emailData = {
+      orderNumber: orderData.orderNumber,
+      customerName: orderData.customer.name,
+      customerPhone: orderData.customer.phone,
+      customerEmail: orderData.customer.email, // Make sure this field exists in your incoming orderData.customer
+      customerAddress: orderData.customer.address,
+      instructions: orderData.customer.instructions, // This is optional, but include if it exists
+      services: orderData.services,
+      pickupDate: orderData.pickup.date,
+      pickupTime: orderData.pickup.time,
+      total: orderData.total,
+      createdAt: order.createdAt, // This comes from the created order, not necessarily the initial orderData
+    };
 
-    console.log("Notification email sent for order:", order.id)
+    // Send email notification
+    await sendNewOrderNotification(emailData);
 
     return NextResponse.json({
       success: true,
@@ -49,6 +56,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Keep the GET function as is, no changes needed there.
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

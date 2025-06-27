@@ -1,61 +1,82 @@
 "use client"
 
-import { useState } from "react"
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, Package, Clock, CheckCircle, Truck } from "lucide-react"
+import { Search, Package, Clock, CheckCircle, Truck, Calendar } from "lucide-react" // Added Calendar icon
 
-interface Order {
-  orderNumber: string
-  services: Array<{ service: string; quantity: number; price: number }>
-  pickup: { date: string; time: string }
-  customer: { name: string; phone: string; address: string }
-  total: number
-  status: string
-  createdAt: string
-}
+
 
 export function OrderTracker() {
   const [orderNumber, setOrderNumber] = useState("")
-  const [order, setOrder] = useState<Order | null>(null)
+  const [order, setOrder] = useState<any>(null)
   const [error, setError] = useState("")
+  const [isRescheduling, setIsRescheduling] = useState(false) // State for reschedule button loading
 
   const trackOrder = async () => {
     if (!orderNumber.trim()) {
       setError("Please enter an order number")
+      setOrder(null) // Clear previous order details
       return
     }
+
+    setError("") // Clear previous errors
+    setOrder(null) // Clear previous order details
 
     try {
       const response = await fetch(`/api/orders/track/${orderNumber.trim()}`)
       const data = await response.json()
-
-      if (data.success) {
+        console.log(data)
+      if (response.ok && data.success) { // Check response.ok for successful HTTP status
         setOrder(data.order)
-        setError("")
       } else {
+        setError(data.message || "Order not found. Please check your order number.")
         setOrder(null)
-        setError("Order not found. Please check your order number.")
       }
     } catch (error) {
       console.error("Error tracking order:", error)
-      setOrder(null)
       setError("Failed to track order. Please try again.")
+      setOrder(null)
     }
   }
 
+  // Placeholder for reschedule logic
+  const handleRescheduleOrder = async () => {
+    setIsRescheduling(true)
+    // In a real application, you would:
+    // 1. Open a modal or navigate to a reschedule page
+    // 2. Pass the order.orderNumber to the rescheduling component/API
+    // 3. Handle the rescheduling logic (e.g., API call to update pickup date/time)
+    console.log(`Attempting to reschedule order: ${order?.orderNumber}`);
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+    alert(`Reschedule functionality for order ${order?.orderNumber} would be implemented here.`);
+    setIsRescheduling(false)
+  }
+
   const getStatusIcon = (status: string) => {
+    console.log(status)
     switch (status) {
-      case "confirmed":
+      case "CONFIRMED":
         return <CheckCircle className="w-5 h-5 text-emerald-600" />
-      case "picked_up":
+      case "PICKED_UP":
         return <Package className="w-5 h-5 text-blue-600" />
-      case "in_progress":
+      case "IN_PROGRESS":
         return <Clock className="w-5 h-5 text-amber-600" />
-      case "ready":
+      case "READY":
         return <Truck className="w-5 h-5 text-purple-600" />
+      case "CANCELLED":
+        return <Clock className="w-5 h-5 text-red-600" />
+      case "DELIVERED":
+        return <CheckCircle className="w-5 h-5 text-green-600" />
+    
+      case "RETURNED":
+        return <Clock className="w-5 h-5 text-gray-600" />
+      case "COMPLETED":
+        return <CheckCircle className="w-5 h-5 text-teal-600" />
+      case "FAILED":
+        return <Clock className="w-5 h-5 text-red-600" />
       default:
         return <Clock className="w-5 h-5 text-slate-600" />
     }
@@ -63,13 +84,23 @@ export function OrderTracker() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "confirmed":
+      case "CONFIRMED":
         return "Order Confirmed - Awaiting Pickup"
-      case "picked_up":
+      case "PICKED_UP":
         return "Items Picked Up - Processing"
-      case "in_progress":
+      case "IN_PROGRESS":
         return "Cleaning in Progress"
-      case "ready":
+      case "CANCELLED":
+        return "Order Cancelled"
+      case "DELIVERED":
+        return "Order Delivered"    
+      case "RETURNED":
+        return "Order Returned"
+      case "COMPLETED":
+        return "Order Completed"
+      case "FAILED":  
+        return "Order Failed"
+      case "READY":
         return "Ready for Delivery"
       default:
         return "Unknown Status"
@@ -119,28 +150,26 @@ export function OrderTracker() {
                 <span className="font-semibold text-slate-800">{getStatusText(order.status)}</span>
               </div>
               <p className="text-sm text-slate-600">Order #{order.orderNumber}</p>
-              <p className="text-sm text-slate-600">
-                Pickup: {order.pickup.date} {order.pickup.time && `(${order.pickup.time})`}
-              </p>
+            
             </div>
 
             <div>
               <h4 className="font-semibold text-slate-800 mb-2">Services</h4>
               <div className="space-y-1">
-                {order.services.map((item, index) => (
+                {order.services.map((item: any, index: any) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span className="text-slate-600">
                       {item.service} × {item.quantity}
                     </span>
                     <span className="font-medium text-slate-800">
-                      ₵{item.price > 0 ? item.price * item.quantity : "TBD"}
+                      ₵{item.price > 0 ? (item.price * item.quantity).toFixed(2) : "TBD"}
                     </span>
                   </div>
                 ))}
               </div>
               <div className="border-t border-slate-200 mt-2 pt-2 flex justify-between font-semibold text-slate-800">
                 <span>Total</span>
-                <span>₵{order.total}</span>
+                <span>₵{order.total.toFixed(2)}</span>
               </div>
             </div>
 
@@ -150,6 +179,9 @@ export function OrderTracker() {
               <p className="text-sm text-slate-600">{order.customer.phone}</p>
               <p className="text-sm text-slate-600">{order.customer.address}</p>
             </div>
+
+            {/* Reschedule Order Button */}
+            
           </div>
         )}
       </CardContent>
