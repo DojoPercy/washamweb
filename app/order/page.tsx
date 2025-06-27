@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -38,6 +38,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
 import { SimpleAddressAutocomplete } from "@/components/simple-address-autocomplete"
+import { ServiceGuidelinesModal } from "@/components/service-guideline"
+import { FriendlyDatePicker } from "@/components/datefriendlypicker"
 
 interface OrderItem {
   service: string
@@ -60,6 +62,25 @@ export default function OrderPage() {
   const [orderSubmitted, setOrderSubmitted] = useState(false)
   const [orderNumber, setOrderNumber] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showGuidelinesModal, setShowGuidelinesModal] = useState(false)
+
+  // Check if user has seen the guidelines before
+  useEffect(() => {
+    const hasSeenGuidelines = localStorage.getItem("hasSeenLaundryTnC")
+    if (!hasSeenGuidelines) {
+      // Show modal after a short delay for better UX
+      const timer = setTimeout(() => {
+        setShowGuidelinesModal(true)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  const handleCloseGuidelines = () => {
+    setShowGuidelinesModal(false)
+    // Mark as seen so it doesn't show again
+    localStorage.setItem("hasSeenLaundryTnC", "true")
+  }
 
   const addService = (service: string, price: number) => {
     const existing = selectedServices.find((item) => item.service === service)
@@ -389,7 +410,7 @@ export default function OrderPage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg font-semibold rounded-xl"
+                className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg font-semibold rounded-xl bg-transparent"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Back to Home
@@ -404,8 +425,11 @@ export default function OrderPage() {
   // Enhanced Order Form
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-teal-50">
+      {/* Service Guidelines Modal */}
+      <ServiceGuidelinesModal isOpen={showGuidelinesModal} onClose={handleCloseGuidelines} />
+
       {/* Enhanced Header */}
-      <header className="bg-white/90 backdrop-blur-md shadow-sm border-b sticky top-0 z-50">
+      <header className="bg-white/90 backdrop-blur-md shadow-sm border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -433,6 +457,17 @@ export default function OrderPage() {
                 </div>
               </div>
             )}
+
+            {/* Guidelines Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGuidelinesModal(true)}
+              className="hidden sm:flex items-center space-x-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Guidelines</span>
+            </Button>
           </div>
         </div>
       </header>
@@ -481,6 +516,19 @@ export default function OrderPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Mobile Guidelines Button */}
+      <div className="sm:hidden bg-blue-50 border-b px-4 py-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowGuidelinesModal(true)}
+          className="w-full text-blue-600 hover:bg-blue-100 justify-center"
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          View Service Guidelines
+        </Button>
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -788,62 +836,22 @@ export default function OrderPage() {
               <Card className="border-0 shadow-xl">
                 <CardContent className="p-8">
                   <div className="space-y-6">
-                    {/* Pickup Info */}
-                    <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <Clock className="w-6 h-6 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-blue-800">Pickup Information</h3>
-                      </div>
-                      <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-700">
-                        <div className="flex items-center space-x-2">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>We pickup between 8AM - 10PM daily</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>30-minute heads up via SMS</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>Free pickup & delivery</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>24-48 hour turnaround</span>
-                        </div>
-                      </div>
-                    </div>
+                    <FriendlyDatePicker value={pickupDate} onChange={setPickupDate} required />
 
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <Label htmlFor="pickup-date" className="text-lg font-semibold text-slate-800 mb-2 block">
-                          Pickup Date *
-                        </Label>
-                        <Input
-                          id="pickup-date"
-                          type="date"
-                          value={pickupDate}
-                          onChange={(e) => setPickupDate(e.target.value)}
-                          min={new Date().toISOString().split("T")[0]}
-                          required
-                          className="h-12 text-lg border-2 border-slate-300 focus:border-blue-500 rounded-xl"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="pickup-time" className="text-lg font-semibold text-slate-800 mb-2 block">
-                          Preferred Time (Optional)
-                        </Label>
-                        <Select value={pickupTime} onValueChange={setPickupTime}>
-                          <SelectTrigger className="h-12 text-lg border-2 border-slate-300 focus:border-blue-500 rounded-xl">
-                            <SelectValue placeholder="Any time works" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="morning">Morning (8AM - 12PM)</SelectItem>
-                            <SelectItem value="afternoon">Afternoon (12PM - 5PM)</SelectItem>
-                            <SelectItem value="evening">Evening (5PM - 10PM)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div>
+                      <Label htmlFor="pickup-time" className="text-lg font-semibold text-slate-800 mb-2 block">
+                        Preferred Time (Optional)
+                      </Label>
+                      <Select value={pickupTime} onValueChange={setPickupTime}>
+                        <SelectTrigger className="h-12 text-lg border-2 border-slate-300 focus:border-blue-500 rounded-xl">
+                          <SelectValue placeholder="Any time works" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="morning">Morning (8AM - 12PM)</SelectItem>
+                          <SelectItem value="afternoon">Afternoon (12PM - 5PM)</SelectItem>
+                          <SelectItem value="evening">Evening (5PM - 10PM)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </CardContent>
@@ -856,7 +864,7 @@ export default function OrderPage() {
                   onClick={prevStep}
                   variant="outline"
                   size="lg"
-                  className="px-8 py-3 text-lg font-semibold rounded-xl"
+                  className="px-8 py-3 text-lg font-semibold rounded-xl bg-transparent"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Back
@@ -993,7 +1001,7 @@ export default function OrderPage() {
                   onClick={prevStep}
                   variant="outline"
                   size="lg"
-                  className="px-8 py-3 text-lg font-semibold rounded-xl"
+                  className="px-8 py-3 text-lg font-semibold rounded-xl bg-transparent"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Back
@@ -1135,36 +1143,38 @@ export default function OrderPage() {
               </Card>
 
               {/* Navigation */}
-              <div className="flex justify-between">
-                <Button
-                  type="button"
-                  onClick={prevStep}
-                  variant="outline"
-                  size="lg"
-                  className="px-8 py-3 text-lg font-semibold rounded-xl"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  size="lg"
-                  className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-12 py-4 text-xl font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                      Submitting Order...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="w-6 h-6 mr-3" />
-                      Confirm Order - Est. ₵{total}
-                    </>
-                  )}
-                </Button>
-              </div>
+              <div className="flex flex-col sm:flex-row justify-between gap-4 w-full">
+  <Button
+    type="button"
+    onClick={prevStep}
+    variant="outline"
+    size="lg"
+    className="w-full sm:w-auto px-8 py-3 text-lg font-semibold rounded-xl bg-transparent"
+  >
+    <ArrowLeft className="w-5 h-5 mr-2" />
+    Back
+  </Button>
+  
+  <Button
+    type="submit"
+    disabled={isSubmitting}
+    size="lg"
+    className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-12 py-4 text-xl font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+  >
+    {isSubmitting ? (
+      <>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+        Submitting Order...
+      </>
+    ) : (
+      <>
+        <CreditCard className="w-6 h-6 mr-3" />
+        Confirm Order - Est. ₵{total}
+      </>
+    )}
+  </Button>
+</div>
+
             </div>
           )}
         </form>
