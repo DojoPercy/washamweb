@@ -5,7 +5,7 @@ import { sendNewOrderNotification } from "@/lib/email"
 export async function POST(request: NextRequest) {
   try {
     const orderData = await request.json()
-
+    console.log(orderData.orderNumber, "Order data received")
     // Create order in Redis
     const order = await RedisOrderService.createOrder({
       orderNumber: orderData.orderNumber,
@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       status: OrderStatus.CONFIRMED,
     })
 
+    console.log("Order created:", order)
     // Send email notification
     await sendNewOrderNotification({
       ...orderData,
@@ -30,6 +31,8 @@ export async function POST(request: NextRequest) {
       ...orderData.pickup,
       createdAt: order.createdAt,
     })
+
+    console.log("Notification email sent for order:", order.id)
 
     return NextResponse.json({
       success: true,

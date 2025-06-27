@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 export async function sendNewOrderNotification(orderData: any) {
   try {
     const { data, error } = await resend.emails.send({
-      from: "WashAm <orders@washam.com>",
+      from: "no-reply@lovetechapi.xyz",
       to: [process.env.ADMIN_EMAIL!],
       subject: `🚨 New Order Alert - ${orderData.orderNumber}`,
       html: `

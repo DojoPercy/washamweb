@@ -138,7 +138,7 @@ export default function OrderPage() {
         status: "confirmed",
         createdAt: new Date().toISOString(),
       }
-
+console.log("Submitting order data:", orderData)
       // Submit to database
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -149,6 +149,7 @@ export default function OrderPage() {
       })
 
       const result = await response.json()
+      console.log("Order submission result:", result)
 
       if (result.success) {
         // Store order in localStorage for demo purposes (backup)
